@@ -4,7 +4,7 @@
 		module="sciproject-build"
 		revision="0.1.0-SNAPSHOT"
 		status="integration"
-		publication="20180626003605"
+		publication="20180626014022"
 		e:sbtVersion="1.0" e:scalaVersion="2.12"
 	>
 		<description>
