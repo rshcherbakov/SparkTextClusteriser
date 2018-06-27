@@ -31,7 +31,8 @@ object main extends App {
 
   // Достаём данные из CSV сандартной библиотекой source.io, не используем Spark DataFrame тут,
   // поскольку с ним возникает ряд проблем при попытке манипуляций с данными (ограничения в RDD)
-  val minedData:Seq[(String, Seq[String])] = Source.fromFile("/home/rjw/Data/neberitrubku_output.csv")
+  var datafile = Source.fromFile("/home/rjw/Data/neberitrubku_output.csv")
+  val minedData:Seq[(String, Seq[String])] = datafile
     .getLines()
     .toSeq
     .tail
@@ -59,8 +60,13 @@ object main extends App {
     .setVectorSize(5)
     .setMinCount(0)
 
+
   // прогоняем наш датасет через word2vec, получаем массив векторов (Array в Scala -- аналог Array в Java)
-  val featuredDS = word2Vec.fit(dataset).transform(dataset).select("number", "features")
+  val featuredDS = word2Vec
+    .fit(dataset)
+    .transform(dataset)
+    .select("number", "features")
+
   // Смотрим, что у нас олучилось в результате -- показывает первые 20 результатов
   featuredDS.show()
 
@@ -74,9 +80,13 @@ object main extends App {
   }
 
   // Тренируем модель
-  val clusters = KMeans.train(parsedData, 6,20)
+  val clusters = KMeans.train(parsedData, 5,20)
 
-  // val wssse = clusters.computeCost(parsedData)
+  val wssse = clusters.computeCost(parsedData)
+  println(wssse)
+  val predictedData = featuredDS.rdd
+    .map(v => (v.get(0),v.get(1), clusters.predict(AVec.dense(v.getAs[Array[Double]](1)))))
   // Результат сохраняем в файловую систему
-  clusters.save(sc, path = "Models/KMeansTest1/neberitrubku")
+  //clusters.save(sc, path = "Models/KMeansTest1/neberitrubku")
+  predictedData.saveAsTextFile("clasterisedData.txt")
 }

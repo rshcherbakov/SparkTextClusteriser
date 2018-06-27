@@ -1,4 +1,8 @@
 *.class
 *.log
-.idea/
-target/
+/.idea
+/target
+project/target/config-classes/
+project/target/streams/compile/compileIncSetup/
+spark-warehouse/
+src/test/

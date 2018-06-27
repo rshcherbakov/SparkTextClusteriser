@@ -4,7 +4,7 @@
 		module="sciproject$sources_2.12"
 		revision="0.1"
 		status="integration"
-		publication="20180626003635"
+		publication="20180627022036"
 	/>
 	<configurations>
 		<conf name="default" visibility="public" description=""/>
