@@ -5,7 +5,14 @@ import org.apache.spark.mllib.clustering.{KMeans, KMeansModel}
 import org.apache.spark.ml.feature.Word2Vec
 import scala.io.Source
 
+import org.apache.spark.streaming._
+
+import org.apache.log4j.Logger
+import org.apache.log4j.Level
+
 object main extends App {
+
+  case class ModelResult(number: String, feedback: String, vect:Array[Double], cluster: Int)
 
   // Создание нового объекта конфигурации Spark
   val sparkConf = new SparkConf()
@@ -29,24 +36,25 @@ object main extends App {
   // Пришлось добавить библиотеку с сериализаторами и дессериализаторами.
   import sparkSession.implicits._
 
+  val ssc = new StreamingContext(sc, Seconds(2))
   // Достаём данные из CSV сандартной библиотекой source.io, не используем Spark DataFrame тут,
   // поскольку с ним возникает ряд проблем при попытке манипуляций с данными (ограничения в RDD)
   var datafile = Source.fromFile("/home/rjw/Data/neberitrubku_output.csv")
-  val minedData:Seq[(String, Seq[String])] = datafile
+  val minedData: Seq[(String, Seq[String])] = datafile
     .getLines()
     .toSeq
     .tail
-    .flatMap{ line =>
+    .flatMap { line =>
       line.split("(\",\")|(\",)|(,\")") match {
         case cells if cells.length == 5 =>
-          Some((cells(2),(cells(1)+" "+cells(4)).split("[\\s,;:\\.]").filter(_.length > 0).toSeq))
+          Some((cells(2), (cells(1) + " " + cells(4)).split("[\\s,;:\\.]").filter(_.length > 0).toSeq))
         case _ => None
       }
     }
 
   // После прведения всех манипуляций создаём датафрейм с двумя колонками - номерами телефона и списком слов
   // список формируется из полей title и description
-  val dataset = sparkSession.createDataFrame(minedData).toDF("number","words")
+  val dataset = sparkSession.createDataFrame(minedData).toDF("number", "words")
 
   // Получам из списка слов список векторов -- feature
   // Создаём екземпляр Word2Vec, говорим, что для построения векторов будем использовать колонку words,
@@ -71,22 +79,35 @@ object main extends App {
   featuredDS.show()
 
   // Конвертируем наши вектора в Spark Dense Vector
-  val parsedData = featuredDS.rdd.map{row =>
-    val features:Array[Double] = row.toSeq.toArray.flatMap{
-      case a:Double => Some(a)
+  val parsedData = featuredDS.rdd.map { row =>
+    val features: Array[Double] = row.toSeq.toArray.flatMap {
+      case a: Double => Some(a)
       case _ => None
     }
     AVec.dense(features)
   }
 
   // Тренируем модель
-  val clusters = KMeans.train(parsedData, 5,20)
+  val clusters = KMeans.train(parsedData, 5, 20)
 
   val wssse = clusters.computeCost(parsedData)
+
   println(wssse)
-  val predictedData = featuredDS.rdd
-    .map(v => (v.get(0),v.get(1), clusters.predict(AVec.dense(v.getAs[Array[Double]](1)))))
+
+  val predictedData = featuredDS.rdd.map { v =>
+      ModelResult(v.get(0).toString, v.get(1).toString,v.getAs[Array[Double]]("vect"),
+        clusters.predict(AVec.dense(v.getAs[Array[Double]]("vect"))))
+    }
+  //predictedData.toDF().createOrReplaceTempView("create_data")
+  predictedData.toDF().coalesce(1)
+    .write
+    //.format("com.databricks.spark.json")
+    .option("header", "true")
+    .mode("append")
+    .save("./mydata.json")
+
+  //.write.csv("./data__.csv")
   // Результат сохраняем в файловую систему
-  //clusters.save(sc, path = "Models/KMeansTest1/neberitrubku")
-  predictedData.saveAsTextFile("clasterisedData.txt")
+  clusters.save(sc, path = "Models/KMeansTest2/neberitrubku")
+  //ssc.start()
 }

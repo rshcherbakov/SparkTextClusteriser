@@ -11,6 +11,6 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-core" % sparkVersion,
   "org.apache.spark" %% "spark-streaming" % sparkVersion,
   "org.apache.spark" %% "spark-mllib" % sparkVersion,
-  //"org.apache.spark" %% "spark-streaming-twitter" % sparkVersion //,
+  //"org.apache.spark" %% "spark-streaming-twitter" % s"$sparkVersion-SNAPSHOT",
   "org.apache.spark" %% "spark-sql" % sparkVersion
 )

@@ -4,7 +4,7 @@
 		module="sciproject$sbt_2.12"
 		revision="0.1"
 		status="integration"
-		publication="20180627022004"
+		publication="20180705010119"
 	/>
 	<configurations>
 		<conf name="compile" visibility="public" description=""/>

@@ -7,7 +7,7 @@
 		revision="0.1"
 		conf="compile"
 		confs="compile, runtime, test, provided, optional"
-		date="20180627022004"/>
+		date="20180705010119"/>
 	<dependencies>
 		<module organisation="org.jetbrains" name="sbt-idea-shell">
 			<revision name="2017.2" status="release" pubdate="20170724193510" resolver="sbt-chain" artresolver="sbt-chain" extra-scalaVersion="2.12" extra-sbtVersion="1.0" downloaded="false" searched="false" default="false" conf="compile, default(compile)" position="79">
